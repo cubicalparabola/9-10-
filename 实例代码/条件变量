@@ -4,48 +4,43 @@
 #include <mutex>
 #include <condition_variable>
 
-std::queue<int> produced_nums;  // 生产的数字队列
-std::mutex m;  // 互斥锁
-std::condition_variable cond_var;  // 条件变量
-bool done = false;  // 生产者是否完成生产的标志
-bool notified = false;  // 是否已通知消费者的标志
+using namespace std;
+queue<int> que; // 共享队列
+mutex mtx; // 保护队列的互斥锁
+condition_variable condition; // 条件变量
+bool finished = false; // 结束标志
 
-void producer(int n)
-{
-    for (int i = 0; i < n; ++i) {
-        std::unique_lock<std::mutex> lock(m);  // 锁住互斥锁
-        produced_nums.push(i);  // 生产数字并添加到队列
-        notified = true;  // 设置已通知标志为 true
-        cond_var.notify_all();  // 唤醒所有等待的线程
+void producer() {
+    for (int i = 0; i < 10; ++i) {
+        unique_lock<mutex> lock(mtx); // 获取互斥锁
+        que.push(i); // 向队列中添加元素
+        lock.unlock(); // 释放互斥锁
+        condition.notify_one(); // 唤醒一个等待的消费者线程
     }
-
-    done = true;  // 设置生产完成标志为 true
-    cond_var.notify_all();  // 唤醒所有等待的线程
-
+    finished = true; // 设置结束标志为真
+    condition.notify_one(); // 唤醒一个等待的消费者线程
 }
 
-void consumer()
-{
-    while (!done) {  // 如果生产未完成，则继续消费
-        std::unique_lock<std::mutex> lock(m);  // 锁住互斥锁
-        while (!notified) {  // 如果未被通知，则等待通知
-            cond_var.wait(lock);  // 等待条件变量的通知
+void consumer() {
+    while (true) {
+        unique_lock<mutex> lock(mtx); // 获取互斥锁
+        condition.wait(lock, [] { return !que.empty() || finished; }); // 等待队列非空或收到结束信号
+        if (finished && que.empty()) { // 如果收到结束信号且队列为空，则退出循环，结束线程
+            return;
         }
-        while (!produced_nums.empty()) {  // 如果队列不为空，则继续消费
-            std::cout << produced_nums.front() << ' ';  // 打印队首元素
-            produced_nums.pop();  // 弹出队首元素
-        }
-        notified = false;  // 设置已通知标志为 false，等待下一次通知
+        int value = que.front(); // 获取队列中的第一个元素
+        que.pop(); // 从队列中移除第一个元素
+        lock.unlock(); // 释放互斥锁
+        cout << "Consumer got: " << value << endl; // 输出获取到的元素值
     }
 }
 
-int main()
-{
-    std::thread p(producer, 10);  // 创建生产者线程，生产10个数字
-    std::thread c(consumer);  // 创建消费者线程
+int main() {
+    thread t1(producer); // 创建生产者线程
+    thread t2(consumer); // 创建消费者线程
 
-    p.join();  // 等待生产者线程结束
-    c.join();  // 等待消费者线程结束
-    
+    t1.join(); // 等待生产者线程结束
+    t2.join(); // 等待消费者线程结束
+
     return 0;
 }
