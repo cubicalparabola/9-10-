@@ -1,0 +1,51 @@
+#include <iostream>
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+
+std::queue<int> produced_nums;  // 生产的数字队列
+std::mutex m;  // 互斥锁
+std::condition_variable cond_var;  // 条件变量
+bool done = false;  // 生产者是否完成生产的标志
+bool notified = false;  // 是否已通知消费者的标志
+
+void producer(int n)
+{
+    for (int i = 0; i < n; ++i) {
+        std::unique_lock<std::mutex> lock(m);  // 锁住互斥锁
+        produced_nums.push(i);  // 生产数字并添加到队列
+        notified = true;  // 设置已通知标志为 true
+        cond_var.notify_all();  // 唤醒所有等待的线程
+    }
+
+    done = true;  // 设置生产完成标志为 true
+    cond_var.notify_all();  // 唤醒所有等待的线程
+
+}
+
+void consumer()
+{
+    while (!done) {  // 如果生产未完成，则继续消费
+        std::unique_lock<std::mutex> lock(m);  // 锁住互斥锁
+        while (!notified) {  // 如果未被通知，则等待通知
+            cond_var.wait(lock);  // 等待条件变量的通知
+        }
+        while (!produced_nums.empty()) {  // 如果队列不为空，则继续消费
+            std::cout << produced_nums.front() << ' ';  // 打印队首元素
+            produced_nums.pop();  // 弹出队首元素
+        }
+        notified = false;  // 设置已通知标志为 false，等待下一次通知
+    }
+}
+
+int main()
+{
+    std::thread p(producer, 10);  // 创建生产者线程，生产10个数字
+    std::thread c(consumer);  // 创建消费者线程
+
+    p.join();  // 等待生产者线程结束
+    c.join();  // 等待消费者线程结束
+    
+    return 0;
+}
