@@ -1,0 +1,33 @@
+#include <iostream> // 引入 iostream 库，用于输入输出操作
+#include <thread> // 引入 thread 库，用于多线程编程
+#include <mutex> // 引入 mutex 库，用于线程同步
+#include <chrono> // 引入 chrono 库，用于处理时间
+
+using namespace std; // 使用标准命名空间
+
+timed_mutex mtx; // 定义一个定时互斥量
+
+void worker(int id) { // 定义一个函数，接受一个整数参数作为线程 ID
+    for (int i = 0; i < 3; ++i) { // 循环三次
+        auto now = chrono::steady_clock::now(); // 获取当前时间
+        if (mtx.try_lock_until(now + chrono::seconds(1))) { // 尝试在一秒内获取锁
+            cout << "Thread " << id << ": doing work" << endl; // 输出线程 ID 和工作信息
+            this_thread::sleep_for(chrono::seconds(1)); // 让线程休眠一秒
+            mtx.unlock(); // 释放锁
+        }
+        else {
+            cout << "Thread " << id << ": failed to acquire mutex" << endl; // 如果获取锁失败，则输出失败信息
+        }
+        this_thread::sleep_for(chrono::seconds(1)); // 让线程休眠一秒
+    }
+}
+
+int main() { // 主函数
+    thread t1(worker, 1); // 创建一个新线程 t1，执行 worker 函数，参数为 1
+    thread t2(worker, 2); // 创建一个新线程 t2，执行 worker 函数，参数为 2
+
+    t1.join(); // 等待 t1 线程结束
+    t2.join(); // 等待 t2 线程结束
+
+    return 0; // 主函数返回 0
+}
