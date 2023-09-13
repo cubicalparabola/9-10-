@@ -1,0 +1,47 @@
+#include<iostream>
+#include<vector>
+using namespace std;
+
+class MemoryPool  // 定义内存池类
+{
+private:
+    size_t blockSize;  // 内存块大小
+    size_t blockCount;  // 内存块数量
+    vector<char> data;  // 预分配的内存
+    vector<void*> freeBlocks;  // 空闲块列表
+
+public:
+    MemoryPool(size_t blockSize, size_t blockCount)
+        : blockSize(blockSize), blockCount(blockCount)  // 初始化内存块大小和数量
+    {
+        data.resize(blockSize * blockCount);  // 预分配内存
+        //data是上面的成员变量，resize是vector的成员函数用于调整容器大小为括号里的值（大小乘数量）
+        for (int i = 0; i < blockCount; ++i)  // 初始化空闲块列表
+            freeBlocks.push_back(&data[blockSize * i]);  // 将预分配的内存添加到空闲块列表
+        //push_back作用是把参数加到vector里。这行代码的含义是将data数组中的一个块的地址添加到freeBlocks列表中。
+    }
+
+    void* allocate()  // 分配内存
+    {
+        if (freeBlocks.empty())  // 如果没有空闲块，则返回 nullptr
+            return nullptr;
+        void* ptr = freeBlocks.back();  // 获取一个空闲块freeBlocks的最后一个元素。
+        freeBlocks.pop_back();  // 从空闲块列表中移除最后一个元素
+        return ptr;  // 返回该块的地址
+    }
+
+    void deallocate(void* ptr)  // 回收内存
+    {
+        freeBlocks.push_back(ptr);  // 将回收的内存添加到空闲块列表
+    }
+
+};
+int main()  // 主函数
+{
+    MemoryPool pool(16, 10);  // 创建一个内存池，每个块大小为16字节，共10个块
+    int* a = static_cast<int*> (pool.allocate());  // 分配一个整数大小的内存块,把pool.allocate()转换成int*
+    *a = 10;  // 将该内存块的值设置为10
+    cout << *a << endl;  // 输出该内存块的值
+    pool.deallocate(a);  // 回收该内存块
+    return 0;  // 返回0表示程序正常结束
+}
