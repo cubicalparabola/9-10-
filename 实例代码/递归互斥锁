@@ -1,0 +1,26 @@
+#include <iostream>
+#include <thread>
+#include <mutex>
+
+using namespace std;
+
+recursive_mutex mtx; // 定义一个递归互斥量
+
+void recursive_lock(int depth) {
+    if (depth <= 0) return;
+
+    mtx.lock(); // 获取锁
+    cout << "Thread " << this_thread::get_id() << ": Depth " << depth << endl;
+    recursive_lock(depth - 1); // 递归调用
+    mtx.unlock(); // 释放锁
+}
+
+int main() {
+    thread t1(recursive_lock, 5); // 创建一个新线程 t1，执行 recursive_lock 函数，深度为 5
+    thread t2(recursive_lock, 5); // 创建一个新线程 t2，执行 recursive_lock 函数，深度为 5
+
+    t1.join(); // 等待 t1 线程结束
+    t2.join(); // 等待 t2 线程结束
+
+    return 0; // 主函数返回 0
+}
