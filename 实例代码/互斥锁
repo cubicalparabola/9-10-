@@ -1,0 +1,27 @@
+#include <iostream>
+#include <thread>
+#include <mutex>
+
+using namespace std;
+mutex mtx; // 创建互斥锁
+int counter = 0; // 共享资源
+
+void increase10k() {
+    for (int i = 0; i < 10000; ++i) {
+        mtx.lock();
+        ++counter;
+        mtx.unlock();
+    }
+}
+
+int main() {
+    thread threads[10]; //只是个数组
+    for (int i = 0; i < 10; ++i) {
+        threads[i] = thread(increase10k); // 创建10个线程
+    }
+    for (auto &th : threads) {
+        th.join(); // 等待所有线程结束
+    }
+    cout << "Counter: " << counter << endl;
+    return 0;
+}
