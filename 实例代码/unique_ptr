@@ -1,0 +1,28 @@
+#include<iostream>
+#include<memory>
+
+using namespace std;
+
+struct Song
+{
+	string artist;
+	string title;
+	Song(const string& artist, const string& title)
+		: artist(artist), title(title) {}
+};
+
+int main() {
+	unique_ptr<Song> song1 = make_unique<Song>("Mr xi", "My dream");
+	cout << "Artist:" << song1->artist << endl;
+	cout << "Title:" << song1->title << endl;
+	unique_ptr<Song> song2 = move(song1);
+	if (song1)
+		cout << "song1 not null" << endl;
+	else
+		cout << "song1 is null" << endl;
+	if (song2)
+		cout << "song2 not null" << endl;
+	else
+		cout << "song2 is null" << endl;
+	return 0;
+}
