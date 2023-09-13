@@ -1,1 +1,21 @@
+条件变量是一种同步原语，它能够阻塞调用线程，直到收到通知才恢复。在C++中，condition_variable类是一个条件变量的实现。
 
+当你调用条件变量的wait()函数时，它会使用一个unique_lock<std::mutex>来锁定线程。然后，线程将保持阻塞状态，直到另一个线程调用相同条件变量对象的notify_one()或notify_all()函数来发送通知。
+
+这种机制允许一个或多个线程等待直到另一个线程修改了共享数据（即满足了某个条件）并发送了通知2。例如，你可以在一个线程中修改共享数据，并调用notify_one()或notify_all()来唤醒等待这个数据的其他线程。在其他线程中，你可以调用wait(), wait_for()或wait_until()来等待数据被修改并收到通知。C++中的condition_variable类提供了以下的成员函数:
+
+(constructor): 构造一个std::condition_variable对象。
+
+(destructor): 销毁一个std::condition_variable对象。
+
+wait(): 阻塞当前线程，直到条件变量被通知。
+
+wait_for(): 阻塞当前线程，直到条件变量被通知或者超过指定的超时时间。
+
+wait_until(): 阻塞当前线程，直到条件变量被通知或者到达指定的时间点。
+
+notify_one(): 唤醒一个等待的线程。
+
+notify_all(): 唤醒所有等待的线程。
+
+这些函数使得多个线程可以在共享数据上进行等待和通知操作。例如，你可以在一个线程中修改共享数据，并调用notify_one()或notify_all()来唤醒等待这个数据的其他线程。在其他线程中，你可以调用wait(), wait_for()或wait_until()来等待数据被修改并收到通知。 需要注意的是，condition_variable只能与unique_lock<std::mutex>一起使用，这是因为在等待期间需要能够解锁互斥锁，然后在收到通知后重新锁定互斥锁。如果需要与任何类型的锁一起使用条件变量，可以使用condition_variable_any。
