@@ -1,0 +1,25 @@
+weak_ptr实例
+#include <iostream>
+#include <memory>
+
+struct Foo {
+    Foo() { std::cout << "Foo constructed\n"; }
+    ~Foo() { std::cout << "Foo destroyed\n"; }
+};
+
+int main() {
+    std::shared_ptr<Foo> sptr = std::make_shared<Foo>();
+    std::weak_ptr<Foo> wptr = sptr;
+
+    // 销毁shared_ptr
+    sptr.reset();
+    
+    // 检查weak_ptr是否过期
+    if (wptr.expired()) {
+        std::cout << "Weak pointer expired\n";
+    }
+    else {
+        std::cout << "Weak pointer still valid\n";
+    }
+    return 0;
+}
