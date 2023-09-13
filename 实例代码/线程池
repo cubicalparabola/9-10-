@@ -1,0 +1,94 @@
+#include <iostream>
+#include <vector>
+#include <queue>
+#include <thread>
+#include <mutex>
+#include <condition_variable>
+#include <functional>
+using namespace std;
+
+mutex cout_mutex; // 新增：用于保护cout的互斥锁
+
+class ThreadPool {
+
+private:
+    vector<thread> workers; // 工作线程的容器，使用 vector 存储所有工作线程对象
+    queue<function<void()>> tasks; // 任务队列，使用 queue 存储所有等待执行的任务函数对象
+    mutex queue_mutex; // 保护任务队列的互斥锁，用于防止多个工作线程同时访问任务队列造成数据竞争
+    condition_variable condition; // 条件变量，用于等待任务队列非空或接收到停止信号
+    bool stop; // 线程池停止标志，用于指示线程池是否应该停止运行
+
+public:
+    // 构造函数，接受一个参数表示线程池中工作线程的数量
+    ThreadPool(size_t num_threads) : stop(false) {
+        //explicit是一个关键字，它表示这个构造函数是显式的，不能用于隐式类型转换或者拷贝初始化。
+        // 循环创建指定数量的工作线程
+        for (size_t i = 0; i < num_threads; ++i) {
+            // 使用 emplace_back 函数在 workers 向量的末尾构造一个新的线程对象
+            workers.emplace_back([this] {
+                // 工作线程函数，使用无限循环等待新任务并执行它们
+                while (true) {
+                    function<void()> task; // 定义一个函数对象变量用于存储任务
+                    {
+                        unique_lock<mutex> lock(queue_mutex); // 获取队列互斥锁
+                        condition.wait(lock, [this] { return stop || !tasks.empty(); }); // 等待条件变量，直到收到停止信号或任务队列非空
+                        if (stop && tasks.empty()) { // 如果收到停止信号且任务队列为空，则退出循环，结束线程
+                            return;
+                        }
+                        task = move(tasks.front()); // 获取任务队列中的第一个任务
+                        tasks.pop(); // 从任务队列中移除第一个任务
+                    }
+                    task(); // 执行任务
+                }
+                });
+        }
+    }
+
+    // enqueue 函数，用于向线程池中添加新任务
+    template <class F, class... Args>
+    void enqueue(F&& f, Args&&... args) {
+        auto task = make_shared<function<void()>>(bind(forward<F>(f), forward<Args>(args)...));
+        //make_shared是共享指针，管理bind在内的内容
+        // 使用 bind 函数创建一个新的函数对象，绑定给定的函数和参数
+        {
+            unique_lock<mutex> lock(queue_mutex); // 获取队列互斥锁
+            if (stop) { // 如果线程池已经停止，则抛出异常
+                throw runtime_error("enqueue on stopped ThreadPool");
+            }
+            tasks.emplace([task]() { (*task)(); });// 使用 emplace 函数在任务队列的末尾构造一个新元素，即新的任务函数对象
+            //emplace是queue的一个成员函数
+        }
+        condition.notify_one();// 通知一个等待的工作线程有新任务可执行
+    }
+
+    // 析构函数，在析构时停止所有工作线程并等待它们结束
+    ~ThreadPool() {
+        {
+            unique_lock<mutex> lock(queue_mutex); // 获取队列互斥锁
+            stop = true; // 设置停止标志为真，表示线程池应该停止运行
+        }
+        condition.notify_all(); // 通知所有等待的工作线程有新任务可执行（实际上是通知它们退出）
+        for (thread& worker : workers) { // 循环等待所有工作线程结束
+            worker.join();//会阻塞调用它的线程，直到与之关联的线程执行完成。
+        }
+    }
+};
+
+int main() {
+    ThreadPool pool(8); // 创建一个包含8个工作线程的线程池
+    for (int i = 0; i < 8; ++i) { // 循环添加8个任务
+        pool.enqueue([i] { // 使用lambda表达式定义任务函数
+            {
+                lock_guard<mutex> lock(cout_mutex); // 在输出之前锁定互斥锁
+                cout << "Task " << i << " is being processed by thread " << this_thread::get_id() << endl; // 输出任务开始处理的信息
+            }
+            this_thread::sleep_for(chrono::seconds(1)); // 线程休眠1秒
+            {
+                lock_guard<mutex> lock(cout_mutex); // 在输出之前锁定互斥锁
+                cout << "Task " << i << " has been processed" << endl; // 输出任务处理完成的信息
+            }
+            });
+    }
+    this_thread::sleep_for(chrono::seconds(5)); // 主线程等待5秒以确保所有任务都已完成
+    return 0; // 返回0表示程序正常结束
+}
