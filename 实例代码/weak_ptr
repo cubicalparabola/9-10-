@@ -1,3 +1,14 @@
+weak_ptr
+这是一种弱引用智能指针，它指向一个由 std::shared_ptr 对象管理的对象，但不影响该对象的引用计数。weak_ptr 主要用于解决循环引用问题。
+
+operator=(): 重载=赋值运算符，使得weak_ptr可以直接被weak_ptr或者shared_ptr类型指针赋值。
+swap(x): 交换两个同类型的weak_ptr指针的内容，其中x表示另一个weak_ptr指针。
+reset(): 将当前weak_ptr指针置为空指针。
+use_count(): 返回和当前weak_ptr指针共享对象的shared_ptr指针的数量。
+expired(): 判断当前weak_ptr指针是否过期，即所指向的对象是否已经被销毁。
+lock(): 如果当前weak_ptr指针已经过期，返回一个空的shared_ptr指针；否则，返回一个和当前 weak_ptr指针指向相同的shared_ptr指针。
+
+
 weak_ptr实例
 #include <iostream>
 #include <memory>
