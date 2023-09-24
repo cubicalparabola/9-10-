@@ -1,4 +1,4 @@
-## shared_ptr
+shared_ptr
 
 这是一种共享所有权的智能指针，它管理一个动态分配的对象，并在最后一个shared_ptr 对象销毁时自动删除该对象。shared_ptr 可以被复制和移动，每个shared_ptr 对象都共享对同一个对象的所有权。
 
