@@ -8,24 +8,25 @@ operator*：这个运算符也被重载，它返回一个指向所管理对象�
 reset()：这个方法可以更改shared_ptr所指向的对象，或者使其不再指向任何对象。
 
 下面是一个实例
-#include <iostream>
-#include <memory>
-using namespace std;
-
-struct book {
-	string title;
-	string author;
-	book(string title, string author)
-		:title(title), author(author){};
-};
-
-int main()
-{
-	shared_ptr<book> book1 = make_shared<book>("My_Struggle","Mr_Xi");
-	cout << "book1 title:" << book1->title << endl;
-	cout << "book1 author:" << book1->author << endl;
-	shared_ptr<book> book2 = book1;
-	shared_ptr<book> book3 = book2;
-	cout << "count: " << book1.use_count() << endl;
-	return 0;
-}
+#include <iostream>  
+#include <memory>  
+using namespace std;  
+  
+struct book {  
+	string title;  
+	string author;  
+	book(string title, string author)  
+		:title(title), author(author){};  
+};  
+  
+int main()  
+{  
+	shared_ptr<book> book1 = make_shared<book>("My_Struggle","Mr_Xi");  
+	cout << "book1 title:" << book1->title << endl;  
+	cout << "book1 author:" << book1->author << endl;  
+	shared_ptr<book> book2 = book1;  
+	shared_ptr<book> book3 = book2;  
+	cout << "count: " << book1.use_count() << endl;  
+	return 0;  
+}  
+  
