@@ -1,3 +1,15 @@
+unique_ptr
+这是一种独占所有权的智能指针，它管理一个动态分配的对象，并在unique_ptr 对象销毁时自动删除该对象。unique_ptr 不能被复制，但可以被移动，这意味着您可以将它的所有权从一个 unique_ptr 对象转移到另一个 unique_ptr 对象。
+
+operator()*: 返回所指向对象的引用。
+operator->(): 返回所指向对象的指针，可以通过它访问对象的成员。
+operator=(): 重载赋值运算符，可以将一个unique_ptr移动给另一个unique_ptr，或者将一个空指针赋给unique_ptr。移动操作会导致原来的unique_ptr失去所有权，变成空指针。
+operator bool(): 返回所指向对象是否存在，可以用于判断unique_ptr是否为空。
+get(): 返回所指向对象的原始指针，但不会改变所有权。
+release(): 释放所有权，返回所指向对象的原始指针，并将unique_ptr置为空。
+reset(): 释放所指向的对象，并重新指向另一个对象或者空指针。
+swap(): 交换两个unique_ptr的所有权和指向的对象。
+
 #include<iostream>
 #include<memory>
 
