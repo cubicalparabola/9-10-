@@ -6,6 +6,7 @@ shared_ptr
 operator->：这个运算符被重载，使得我们可以像使用普通指针一样使用shared_ptr。
 operator*：这个运算符也被重载，它返回一个指向所管理对象的引用。
 reset()：这个方法可以更改shared_ptr所指向的对象，或者使其不再指向任何对象。
+
 下面是一个实例
 #include <iostream>
 #include <memory>
